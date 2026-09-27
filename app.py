@@ -10,7 +10,6 @@ st.set_page_config(page_title="Reconocimiento Facial con PCA", page_icon="👤",
 
 st.title("Reconocimiento Facial y Reconstrucción con PCA")
 st.write("Proyecto de Álgebra Lineal Avanzada: Matrices y PCA aplicado a rostros.")
-st.write("Mateo Muñiz Roquet 00593092")
 
 # Configuración de resolución
 IMG_HEIGHT, IMG_WIDHT = 256, 256
