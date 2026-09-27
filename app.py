@@ -83,11 +83,11 @@ if uploaded_mias and uploaded_otras:
     st.write(f"Evaluando la foto actual seleccionada (ID #{indice_foto}):")
 
     if indice_foto < len(uploaded_mias):
-        st.info("📌 Esta foto pertenece originalmente al grupo: **Tú (Dataset propio)**")
+        st.info("📌 Esta foto pertenece originalmente al grupo: **Tus fotos**")
     else:
         st.warning("📌 Esta foto pertenece originalmente al grupo: **Otra persona**")
 
-    if st.button("Verificar Identidad con KNN"):
+    if st.button("Verificar identidad de la ID de foto seleccionada"):
         vector_prueba = X[indice_foto].reshape(1, -1)
         vector_reducido = pca_full.transform(vector_prueba)
         prediccion = knn.predict(vector_reducido)
