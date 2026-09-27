@@ -9,14 +9,14 @@ from PIL import Image
 st.set_page_config(page_title="Reconocimiento Facial con PCA", page_icon="👤", layout="centered")
 
 st.title("Reconocimiento Facial y Reconstrucción con PCA")
-st.write("Proyecto de Álgebra Lineal: Espacios vectoriales aplicados a rostros.")
+st.write("Proyecto de Álgebra Lineal Avanzada: Matrices y PCA aplicado a rostros.")
 
 # Configuración de resolución
-IMG_HEIGHT, IMG_WIDHT = 128, 128
+IMG_HEIGHT, IMG_WIDHT = 256, 256
 channels = 3
 
 # Sección de subida de archivos en la web
-st.sidebar.header("1. Cargar Dataset")
+st.sidebar.header("1. Cargar Imágenes")
 uploaded_mias = st.sidebar.file_uploader("Sube tus fotos (Tú)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
 uploaded_otras = st.sidebar.file_uploader("Sube fotos de otra persona", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
 
@@ -82,11 +82,11 @@ st.write(f"Evaluando la foto actual seleccionada (ID #{indice_foto}):")
 
 # Mostramos un indicador de qué categoría REAL tiene esta foto según lo que subiste
 if indice_foto < len(uploaded_mias):
-    st.info("📌 Esta foto pertenece originalmente al grupo: **Tú (Dataset propio)**")
+    st.info("📌 Esta foto pertenece originalmente al grupo: **Tus fotos**")
 else:
     st.warning("📌 Esta foto pertenece originalmente al grupo: **Otra persona**")
 
-if st.button("Verificar Identidad con KNN"):
+if st.button("Verificar Identidad de la ID de foto seleccionada"):
     vector_prueba = X[indice_foto].reshape(1, -1)
     vector_reducido = pca_full.transform(vector_prueba)
     prediccion = knn.predict(vector_reducido)
