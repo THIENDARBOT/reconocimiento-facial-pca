@@ -70,11 +70,11 @@ if uploaded_mias and uploaded_otras:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(f"Original #{indice_foto}")
-        st.image(X_images[indice_foto], use_column_width=True)
+        st.image(X_images[indice_foto], use_container_width=True)
         
     with col2:
         st.subheader(f"Reconstruida ({num_componentes} comp.)")
-        st.image(reconstruida, use_column_width=True)
+        st.image(reconstruida, use_container_width=True)
         
     # --- SECCIÓN 3: IDENTIFICADOR DE ROSTROS ---
     st.header("3. Identificador de Identidad")
