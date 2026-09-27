@@ -76,18 +76,22 @@ if uploaded_mias and uploaded_otras:
         st.subheader(f"Reconstruida ({num_componentes} comp.)")
         st.image(reconstruida, use_container_width=True)
         
-    # --- SECCIÓN 3: IDENTIFICADOR DE ROSTROS ---
-    st.header("3. Identificador de Identidad")
-    st.write("Haz clic en el botón para evaluar si el sistema reconoce la foto seleccionada.")
-    
-    if st.button("Verificar Identidad"):
-        vector_prueba = X[indice_foto].reshape(1, -1)
-        vector_reducido = pca_full.transform(vector_prueba)
-        prediccion = knn.predict(vector_reducido)
-        
-        if prediccion[0] == 1:
-            st.success("Resultado: ¡SÍ ERES TÚ! ✅")
-        else:
-            st.error("Resultado: NO ERES TÚ ❌")
+# --- SECCIÓN 3: IDENTIFICADOR DE ROSTROS ---
+st.header("3. Identificador de Identidad")
+st.write(f"Evaluando la foto actual seleccionada (ID #{indice_foto}):")
+
+# Mostramos un indicador de qué categoría REAL tiene esta foto según lo que subiste
+if indice_foto < len(uploaded_mias):
+    st.info("📌 Esta foto pertenece originalmente al grupo: **Tú (Dataset propio)**")
 else:
-    st.info("👈 Por favor, sube tus fotos y las de otra persona en la barra lateral para empezar.")
+    st.warning("📌 Esta foto pertenece originalmente al grupo: **Otra persona**")
+
+if st.button("Verificar Identidad con KNN"):
+    vector_prueba = X[indice_foto].reshape(1, -1)
+    vector_reducido = pca_full.transform(vector_prueba)
+    prediccion = knn.predict(vector_reducido)
+    
+    if prediccion[0] == 1:
+        st.success("Resultado del Modelo: ¡SÍ ERES TÚ! ✅")
+    else:
+        st.error("Resultado del Modelo: NO ERES TÚ ❌")
