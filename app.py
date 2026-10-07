@@ -113,8 +113,7 @@ if st.button("Analizar y Comparar con PCA"):
                     distancias = np.linalg.norm(vectores_persona - vector_reducido, axis=1)
                     distancia_minima = np.min(distancias)
                     
-                    # 4. Fórmula de decaimiento mucho más estricta y sensible
-                    # Reducimos la escala a 350 para que las distancias mayores penalicen duro el porcentaje
+                    # 4. Cálculo del porcentaje
                     ESCALA_DISTANCIA = 350.0  
                     porcentaje_similitud = max(0.0, 100.0 * np.exp(- (distancia_minima / ESCALA_DISTANCIA) ** 2))
                     
@@ -122,10 +121,13 @@ if st.button("Analizar y Comparar con PCA"):
                     st.write(f"🔍 **Distancia mínima en espacio PCA a {nombre_usuario}:** {distancia_minima:.2f}")
                     st.info(f"📊 **Porcentaje de coincidencia para {nombre_usuario}:** **{porcentaje_similitud:.2f}%**")
                     
-                    # 5. Umbral de validación estricto (exigimos al menos 75% de similitud real)
+                    # 5. UMBRAL ABSOLUTO DE RECHAZO (Freno de mano matemático)
+                    # Si tus fotos de prueba genuinas de Mateo rondan distancias menores a 60 u 80, 
+                    # cualquier rostro ajeno que rebase este límite será rechazado en seco.
+                    LIMITE_MAXIMO_DISTANCIA = 90.0
                     UMBRAL_APROBACION = 75.0
                     
-                    if porcentaje_similitud >= UMBRAL_APROBACION:
+                    if distancia_minima <= LIMITE_MAXIMO_DISTANCIA and porcentaje_similitud >= UMBRAL_APROBACION:
                         st.success(f"¡Identidad validada con éxito! El sistema confirma que eres **{nombre_usuario}** ✅")
                     else:
-                        st.error(f"❌ **Rechazado:** La foto ingresada no coincide con la exigencia geométrica de **{nombre_usuario}** (similitud del {porcentaje_similitud:.2f}%, por debajo del umbral del {UMBRAL_APROBACION}%).")
+                        st.error(f"❌ **Rechazado:** El rostro ingresado no coincide con los patrones biométricos requeridos para **{nombre_usuario}** (Distancia geométrica excesiva o fuera de rango).")
