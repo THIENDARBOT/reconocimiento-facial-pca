@@ -33,7 +33,7 @@ def cargar_dataset_precargado():
     if len(subcarpetas) < 3:
         return None, None, None, f"Se necesitan al menos 3 carpetas de personas dentro de '{CARPETA_DATASET}'."
     
-    for idx, nombre_persona in enumerate(subcarpetas[:3]):  Tomamos exactamente 3 personas
+    for idx, nombre_persona in enumerate(subcarpetas[:3]):
         nombres_clases[idx] = nombre_persona
         ruta_persona = os.path.join(CARPETA_DATASET, nombre_persona)
         
