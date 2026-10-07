@@ -127,5 +127,3 @@ if st.button("Analizar y Comparar con PCA"):
                         st.success(f"¡Identidad validada con éxito! El sistema confirma que eres **{nombre_usuario}** ✅")
                     else:
                         st.error(f"❌ **Rechazado:** La foto ingresada no coincide geométricamente con los rasgos guardados de **{nombre_usuario}** (similitud insuficiente).")
-                    else:
-                    st.warning(f"⚠️ El nombre ingresado ('{nombre_usuario}') no se encuentra registrado en el dataset base (Personas válidas: {list(nombres_clases.values())}).")
