@@ -113,17 +113,19 @@ if st.button("Analizar y Comparar con PCA"):
                     distancias = np.linalg.norm(vectores_persona - vector_reducido, axis=1)
                     distancia_minima = np.min(distancias)
                     
-                    # 4. Convertir la distancia en un porcentaje realista usando una función de decaimiento exponencial
-                    # (Si la distancia es 0 da 100%, si la distancia es grande, el porcentaje cae rápidamente hacia 0%)
-                    ESCALA_DISTANCIA = 1500.0  # Factor de sensibilidad geométrica
+                    # 4. Fórmula de decaimiento mucho más estricta y sensible
+                    # Reducimos la escala a 350 para que las distancias mayores penalicen duro el porcentaje
+                    ESCALA_DISTANCIA = 350.0  
                     porcentaje_similitud = max(0.0, 100.0 * np.exp(- (distancia_minima / ESCALA_DISTANCIA) ** 2))
                     
                     st.subheader("Resultados del Análisis Matemático:")
                     st.write(f"🔍 **Distancia mínima en espacio PCA a {nombre_usuario}:** {distancia_minima:.2f}")
                     st.info(f"📊 **Porcentaje de coincidencia para {nombre_usuario}:** **{porcentaje_similitud:.2f}%**")
                     
-                    # 5. Umbral estricto de validación (por ejemplo, mínimo 50% de similitud real)
-                    if porcentaje_similitud >= 50.0:
+                    # 5. Umbral de validación estricto (exigimos al menos 75% de similitud real)
+                    UMBRAL_APROBACION = 75.0
+                    
+                    if porcentaje_similitud >= UMBRAL_APROBACION:
                         st.success(f"¡Identidad validada con éxito! El sistema confirma que eres **{nombre_usuario}** ✅")
                     else:
-                        st.error(f"❌ **Rechazado:** La foto ingresada no coincide geométricamente con los rasgos guardados de **{nombre_usuario}** (similitud insuficiente).")
+                        st.error(f"❌ **Rechazado:** La foto ingresada no coincide con la exigencia geométrica de **{nombre_usuario}** (similitud del {porcentaje_similitud:.2f}%, por debajo del umbral del {UMBRAL_APROBACION}%).")
