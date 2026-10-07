@@ -7,8 +7,8 @@ from PIL import Image
 # Configuración de la página web
 st.set_page_config(page_title="Reconocimiento Facial con PCA", page_icon="👤", layout="centered")
 
-st.title("Reconocimiento Facial y Probabilidad con PCA")
-st.write("Sistema inteligente de reconocimiento basado en espacios vectoriales y álgebra lineal.")
+st.title("Reconocimiento Facial con PCA")
+st.write("Sistema de reconocimiento facial utilizando PCA en diferentes imágenes con un dataset.")
 
 # Configuración de resolución
 IMG_HEIGHT, IMG_WIDHT = 256, 256
