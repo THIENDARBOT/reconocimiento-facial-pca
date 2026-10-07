@@ -62,7 +62,7 @@ def cargar_dataset_precargado():
     pca_full = PCA(n_components=max_comp, svd_solver='full').fit(X)
     X_transformed = pca_full.transform(X)
     
-    knn = KNeighborsClassifier(n_neighbors=3, weights='distance')
+    knn = KNeighborsClassifier(n_neighbors=3, weights='uniform')
     knn.fit(X_transformed, y_labels)
     
     return pca_full, knn, nombres_clases, X_images.shape[0]
@@ -87,7 +87,7 @@ else:
         img_usuario = Image.open(foto_usuario).convert('RGB').resize((IMG_WIDHT, IMG_HEIGHT))
         st.image(img_usuario, caption="Foto ingresada por el usuario", width=250)
 
-        if st.button("Analizar y Comparar con PCA"):
+if st.button("Analizar y Comparar con PCA"):
             if nombre_usuario.strip() == "":
                 st.warning("Por favor, ingresa tu nombre antes de analizar.")
             else:
@@ -95,17 +95,33 @@ else:
                 vector_nuevo = np.array(img_usuario, dtype=np.float32).flatten() / 255.0
                 vector_reducido = pca_full.transform([vector_nuevo])
                 
-                # Obtener probabilidades y predicción
-                probabilidades = knn.predict_proba(vector_reducido)[0]
-                clase_predicha = knn.predict(vector_reducido)[0]
+                # Obtener distancias a los vecinos más cercanos para calcular una probabilidad real basada en geometría
+                distancias, indices = knn.kneighbors(vector_reducido)
+                vecinos_etiquetas = y_labels[indices[0]]
                 
+                # Calcular probabilidad más suave basada en distancias inversas
+                eps = 1e-5
+                distancias_inv = 1.0 / (distancias[0] + eps)
+                
+                # Sumar pesos por clase
+                clases_unicas = np.unique(y_labels)
+                pesos_clases = {c: 0.0 for c in clases_unicas}
+                
+                for etiqueta, dist_inv in zip(vecinos_etiquetas, distancias_inv):
+                    pesos_clases[etiqueta] += dist_inv
+                    
+                total_peso = sum(pesos_clases.values())
+                probabilidades_suaves = {c: (p / total_peso) * 100 for c, p in pesos_clases.items()}
+                
+                # Identificar la clase ganadora
+                clase_predicha = max(probabilidades_suaves, key=probabilidades_suaves.get)
                 nombre_mas_cercano = nombres_clases[clase_predicha]
-                porcentaje_maximo = probabilidades[clase_predicha] * 100
+                porcentaje_maximo = probabilidades_suaves[clase_predicha]
 
                 st.subheader("Resultados del Análisis Matemático:")
-                st.write(f"🔍 **Persona más cercana detectada por PCA/KNN:** {nombre_mas_cercano} ({porcentaje_maximo:.2f}% de similitud global)")
+                st.write(f"🔍 **Persona más cercana detectada por PCA/KNN:** {nombre_mas_cercano} ({porcentaje_maximo:.2f}% de similitud)")
 
-                # Buscar si el nombre ingresado por el usuario coincide con alguna clase registrada
+                # Buscar si el nombre ingresado coincide con alguna clase registrada
                 clase_usuario_id = None
                 for k, v in nombres_clases.items():
                     if v.strip().lower() == nombre_usuario.strip().lower():
@@ -113,12 +129,12 @@ else:
                         break
                 
                 if clase_usuario_id is not None:
-                    prob_usuario = probabilidades[clase_usuario_id] * 100
+                    prob_usuario = probabilidades_suaves[clase_usuario_id]
                     st.info(f"📊 Probabilidad de coincidencia específica para **{nombre_usuario}**: **{prob_usuario:.2f}%**")
                     
-                    if prob_usuario > 50:
-                        st.success(f"¡Identidad confirmada! El sistema valida que eres **{nombre_usuario}** ✅")
+                    if prob_usuario >= 60:
+                        st.success(f"¡Identidad validada con buen margen! El sistema apunta a que eres **{nombre_usuario}** ✅")
                     else:
-                        st.warning("Los rasgos difieren considerablemente de este perfil. Revisa el nombre ingresado ⚠️")
+                        st.warning("⚠️ La similitud geométrica es baja. Los rasgos difieren considerablemente de este perfil.")
                 else:
-                    st.warning(f"⚠️ El nombre ingresado ('{nombre_usuario}') no se encuentra registrado en el dataset base del sistema (Personas válidas: {list(nombres_clases.values())}).")
+                    st.warning(f"⚠️ El nombre ingresado ('{nombre_usuario}') no se encuentra registrado en el dataset base (Personas válidas: {list(nombres_clases.values())}).")
