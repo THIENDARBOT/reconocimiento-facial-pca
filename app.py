@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import os
 from sklearn.decomposition import PCA
-from sklearn.neighbors import KNeighborsClassifier
 from PIL import Image
 
 # Configuración de la página web
@@ -13,7 +12,6 @@ st.write("Sistema inteligente de reconocimiento basado en espacios vectoriales y
 
 # Configuración de resolución
 IMG_HEIGHT, IMG_WIDHT = 256, 256
-channels = 3
 
 # Ruta de la carpeta donde están precargadas las 3 personas en tu repositorio de GitHub
 CARPETA_DATASET = "personas"
@@ -53,13 +51,10 @@ def cargar_dataset_precargado():
     pca_full = PCA(n_components=max_comp, svd_solver='full').fit(X)
     X_transformed = pca_full.transform(X)
     
-    knn = KNeighborsClassifier(n_neighbors=3, weights='uniform')
-    knn.fit(X_transformed, y_labels)
-    
-    return pca_full, knn, nombres_clases, X_images.shape[0], y_labels, X_transformed
+    return pca_full, nombres_clases, X_images.shape[0], y_labels, X_transformed
 
 # Cargar el modelo con las imágenes fijas del repositorio
-pca_full, knn, nombres_clases, resultado_carga, y_labels, X_transformed = cargar_dataset_precargado()
+pca_full, nombres_clases, resultado_carga, y_labels, X_transformed = cargar_dataset_precargado()
 
 if not isinstance(resultado_carga, str):
     st.success(f"✅ ¡Dataset precargado exitosamente! El sistema reconoce a: **{list(nombres_clases.values())}** ({resultado_carga} imágenes en total).")
