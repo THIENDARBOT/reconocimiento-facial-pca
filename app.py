@@ -1,6 +1,6 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import os
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from PIL import Image
@@ -8,91 +8,117 @@ from PIL import Image
 # Configuración de la página web
 st.set_page_config(page_title="Reconocimiento Facial con PCA", page_icon="👤", layout="centered")
 
-st.title("Reconocimiento Facial y Reconstrucción con PCA")
-st.write("Proyecto de Álgebra Lineal Avanzada: Matrices y PCA aplicado a rostros.")
+st.title("Reconocimiento Facial y Probabilidad con PCA")
+st.write("Sistema inteligente de reconocimiento basado en espacios vectoriales y álgebra lineal.")
 
 # Configuración de resolución
 IMG_HEIGHT, IMG_WIDHT = 256, 256
 channels = 3
 
-# Sección de subida de archivos en la web
-st.sidebar.header("1. Cargar Imágenes")
-uploaded_mias = st.sidebar.file_uploader("Sube tus fotos (Tú)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
-uploaded_otras = st.sidebar.file_uploader("Sube fotos de otra persona", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
+# Ruta de la carpeta donde están precargadas las 3 personas en tu repositorio de GitHub
+CARPETA_DATASET = "personas"
 
-if uploaded_mias and uploaded_otras:
+@st.cache_resource
+def cargar_dataset_precargado():
     images_list = []
     y_labels_list = []
+    nombres_clases = {}
     
-    # Procesar fotos tuyas (Etiqueta 1)
-    for file in uploaded_mias:
-        img = Image.open(file).convert('RGB').resize((IMG_WIDHT, IMG_HEIGHT))
-        images_list.append(np.array(img, dtype=np.float32) / 255.0)
-        y_labels_list.append(1)
+    if not os.path.exists(CARPETA_DATASET):
+        return None, None, None, f"No se encontró la carpeta '{CARPETA_DATASET}' en el repositorio."
+    
+    # Leer las subcarpetas (cada subcarpeta es una persona)
+    subcarpetas = sorted([d for d in os.listdir(CARPETA_DATASET) if os.path.isdir(os.path.join(CARPETA_DATASET, d))])
+    
+    if len(subcarpetas) < 3:
+        return None, None, None, f"Se necesitan al menos 3 carpetas de personas dentro de '{CARPETA_DATASET}'."
+    
+    for idx, nombre_persona in enumerate(subcarpetas[:3]):  Tomamos exactamente 3 personas
+        nombres_clases[idx] = nombre_persona
+        ruta_persona = os.path.join(CARPETA_DATASET, nombre_persona)
         
-    # Procesar fotos de otros (Etiqueta 0)
-    for file in uploaded_otras:
-        img = Image.open(file).convert('RGB').resize((IMG_WIDHT, IMG_HEIGHT))
-        images_list.append(np.array(img, dtype=np.float32) / 255.0)
-        y_labels_list.append(0)
+        for filename in os.listdir(ruta_persona):
+            if filename.lower().endswith(('png', 'jpg', 'jpeg')):
+                img_path = os.path.join(ruta_persona, filename)
+                try:
+                    img = Image.open(img_path).convert('RGB').resize((IMG_WIDHT, IMG_HEIGHT))
+                    images_list.append(np.array(img, dtype=np.float32) / 255.0)
+                    y_labels_list.append(idx)
+                except Exception as e:
+                    pass
+                    
+    if len(images_list) == 0:
+        return None, None, None, "No hay imágenes válidas dentro de las subcarpetas."
         
     X_images = np.array(images_list)
     y_labels = np.array(y_labels_list)
     n_samples = X_images.shape[0]
     X = X_images.reshape(n_samples, -1)
     
-    # Aplicar PCA y KNN
+    # Entrenar PCA y KNN
     max_comp = min(n_samples - 1, 30) if n_samples > 1 else 1
     if max_comp < 1: max_comp = 1
     
     pca_full = PCA(n_components=max_comp, svd_solver='full').fit(X)
     X_transformed = pca_full.transform(X)
     
-    knn = KNeighborsClassifier(n_neighbors=3)
+    knn = KNeighborsClassifier(n_neighbors=3, weights='distance')
     knn.fit(X_transformed, y_labels)
     
-    st.sidebar.success(f"¡Modelo entrenado con {n_samples} imágenes!")
-    
-    # --- SECCIÓN 2: EL DESLIZADOR INTERACTIVO ---
-    st.header("2. Reconstrucción de Imágenes con PCA")
-    st.write("Mueve el deslizador para ver cómo la imagen recupera nitidez al sumar componentes principales.")
-    
-    indice_foto = st.slider("Selecciona el ID de la foto", 0, n_samples - 1, 0)
-    num_componentes = st.slider("Número de Componentes Principales", 1, max_comp, min(5, max_comp))
-    
-    # Reconstrucción matemática
-    reconstruida_plana = np.dot(X_transformed[indice_foto, :num_componentes], 
-                                pca_full.components_[:num_componentes, :]) + pca_full.mean_
-    reconstruida = reconstruida_plana.reshape((IMG_HEIGHT, IMG_WIDHT, channels))
-    reconstruida = np.clip(reconstruida, 0, 1)
-    
-    # Mostrar imágenes lado a lado
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(f"Original #{indice_foto}")
-        st.image(X_images[indice_foto], use_container_width=True)
-        
-    with col2:
-        st.subheader(f"Reconstruida ({num_componentes} comp.)")
-        st.image(reconstruida, use_container_width=True)
-        
-# (Aquí arriba ya se dibujaron las imágenes original y reconstruida)
+    return pca_full, knn, nombres_clases, X_images.shape[0]
 
-    # --- SECCIÓN 3: IDENTIFICADOR DE ROSTROS ---
-    st.header("3. Identificador de Identidad")
-    st.write(f"Evaluando la foto actual seleccionada (ID #{indice_foto}):")
+# Cargar el modelo con las imágenes fijas del repositorio
+pca_full, knn, nombres_clases, resultado_carga = cargar_dataset_precargado()
 
-    if indice_foto < len(uploaded_mias):
-        st.info("📌 Esta foto pertenece originalmente al grupo: **Tus fotos**")
-    else:
-        st.warning("📌 Esta foto pertenece originalmente al grupo: **Otra persona**")
+if isinstance(resultado_carga, str):
+    st.error(f"⚠️ Error de configuración: {resultado_carga}")
+    st.info(f"Asegúrate de crear una carpeta llamada '{CARPETA_DATASET}' en tu repositorio de GitHub y dentro pon 3 carpetas con los nombres de las personas y sus fotos.")
+else:
+    st.success(f"✅ ¡Dataset precargado exitosamente! El sistema reconoce a: **{list(nombres_clases.values())}** ({resultado_carga} imágenes en total).")
+    
+    # --- INTERFAZ PARA EL USUARIO FINAL ---
+    st.header("Verificación de Identidad")
+    st.write("Sube una foto tuya e ingresa tu nombre para que el sistema calcule la probabilidad de coincidencia.")
 
-    if st.button("Verificar identidad de la ID de foto seleccionada"):
-        vector_prueba = X[indice_foto].reshape(1, -1)
-        vector_reducido = pca_full.transform(vector_prueba)
-        prediccion = knn.predict(vector_reducido)
-        
-        if prediccion[0] == 1:
-            st.success("Resultado del Modelo: ¡SÍ ERES TÚ! ✅")
-        else:
-            st.error("Resultado del Modelo: NO ERES TÚ ❌")
+    nombre_usuario = st.text_input("Ingresa tu nombre:")
+    foto_usuario = st.file_uploader("Sube tu foto de prueba", type=['png', 'jpg', 'jpeg'])
+
+    if foto_usuario is not None:
+        img_usuario = Image.open(foto_usuario).convert('RGB').resize((IMG_WIDHT, IMG_HEIGHT))
+        st.image(img_usuario, caption="Foto ingresada por el usuario", width=250)
+
+        if st.button("Analizar y Comparar con PCA"):
+            if nombre_usuario.strip() == "":
+                st.warning("Por favor, ingresa tu nombre antes de analizar.")
+            else:
+                # Procesar la foto ingresada
+                vector_nuevo = np.array(img_usuario, dtype=np.float32).flatten() / 255.0
+                vector_reducido = pca_full.transform([vector_nuevo])
+                
+                # Obtener probabilidades y predicción
+                probabilidades = knn.predict_proba(vector_reducido)[0]
+                clase_predicha = knn.predict(vector_reducido)[0]
+                
+                nombre_mas_cercano = nombres_clases[clase_predicha]
+                porcentaje_maximo = probabilidades[clase_predicha] * 100
+
+                st.subheader("Resultados del Análisis Matemático:")
+                st.write(f"🔍 **Persona más cercana detectada por PCA/KNN:** {nombre_mas_cercano} ({porcentaje_maximo:.2f}% de similitud global)")
+
+                # Buscar si el nombre ingresado por el usuario coincide con alguna clase registrada
+                clase_usuario_id = None
+                for k, v in nombres_clases.items():
+                    if v.strip().lower() == nombre_usuario.strip().lower():
+                        clase_usuario_id = k
+                        break
+                
+                if clase_usuario_id is not None:
+                    prob_usuario = probabilidades[clase_usuario_id] * 100
+                    st.info(f"📊 Probabilidad de coincidencia específica para **{nombre_usuario}**: **{prob_usuario:.2f}%**")
+                    
+                    if prob_usuario > 50:
+                        st.success(f"¡Identidad confirmada! El sistema valida que eres **{nombre_usuario}** ✅")
+                    else:
+                        st.warning("Los rasgos difieren considerablemente de este perfil. Revisa el nombre ingresado ⚠️")
+                else:
+                    st.warning(f"⚠️ El nombre ingresado ('{nombre_usuario}') no se encuentra registrado en el dataset base del sistema (Personas válidas: {list(nombres_clases.values())}).")
