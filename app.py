@@ -24,14 +24,8 @@ def cargar_dataset_precargado():
     y_labels_list = []
     nombres_clases = {}
     
-    if not os.path.exists(CARPETA_DATASET):
-        return None, None, None, f"No se encontró la carpeta '{CARPETA_DATASET}' en el repositorio."
-    
-    # Leer las subcarpetas (cada subcarpeta es una persona)
+    # Leer las subcarpetas
     subcarpetas = sorted([d for d in os.listdir(CARPETA_DATASET) if os.path.isdir(os.path.join(CARPETA_DATASET, d))])
-    
-    if len(subcarpetas) < 3:
-        return None, None, None, f"Se necesitan al menos 3 carpetas de personas dentro de '{CARPETA_DATASET}'."
     
     for idx, nombre_persona in enumerate(subcarpetas[:3]):
         nombres_clases[idx] = nombre_persona
@@ -46,9 +40,6 @@ def cargar_dataset_precargado():
                     y_labels_list.append(idx)
                 except Exception as e:
                     pass
-                    
-    if len(images_list) == 0:
-        return None, None, None, "No hay imágenes válidas dentro de las subcarpetas."
         
     X_images = np.array(images_list)
     y_labels = np.array(y_labels_list)
@@ -70,10 +61,7 @@ def cargar_dataset_precargado():
 # Cargar el modelo con las imágenes fijas del repositorio
 pca_full, knn, nombres_clases, resultado_carga, y_labels, X_transformed = cargar_dataset_precargado()
 
-if isinstance(resultado_carga, str):
-    st.error(f"⚠️ Error de configuración: {resultado_carga}")
-    st.info(f"Asegúrate de crear una carpeta llamada '{CARPETA_DATASET}' en tu repositorio de GitHub y dentro pon 3 carpetas con los nombres de las personas y sus fotos.")
-else:
+if not isinstance(resultado_carga, str):
     st.success(f"✅ ¡Dataset precargado exitosamente! El sistema reconoce a: **{list(nombres_clases.values())}** ({resultado_carga} imágenes en total).")
     
     # --- INTERFAZ PARA EL USUARIO FINAL ---
