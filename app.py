@@ -95,15 +95,20 @@ if st.button("Analizar y Comparar con PCA"):
                 vector_nuevo = np.array(img_usuario, dtype=np.float32).flatten() / 255.0
                 vector_reducido = pca_full.transform([vector_nuevo])
                 
-                # Obtener distancias a los vecinos más cercanos para calcular una probabilidad real basada en geometría
+                # Obtener distancias reales de los vecinos más cercanos
                 distancias, indices = knn.kneighbors(vector_reducido)
                 vecinos_etiquetas = y_labels[indices[0]]
                 
-                # Calcular probabilidad más suave basada en distancias inversas
+                # Distancia mínima al vecino más cercano (menor distancia = mayor parecido real)
+                distancia_minima = distancias[0][0]
+                
+                # Definimos un umbral de distancia máxima tolerada para considerar que un rostro pertenece al dataset.
+                # (Puedes ajustar este valor si notas que es muy estricto o muy relajado).
+                UMBRAL_DISTANCIA = 2500.0  # Si la distancia excede esto, el rostro es ajeno.
+                
+                # Calcular probabilidad basada en distancias inversas suavizadas
                 eps = 1e-5
                 distancias_inv = 1.0 / (distancias[0] + eps)
-                
-                # Sumar pesos por clase
                 clases_unicas = np.unique(y_labels)
                 pesos_clases = {c: 0.0 for c in clases_unicas}
                 
@@ -113,10 +118,14 @@ if st.button("Analizar y Comparar con PCA"):
                 total_peso = sum(pesos_clases.values())
                 probabilidades_suaves = {c: (p / total_peso) * 100 for c, p in pesos_clases.items()}
                 
-                # Identificar la clase ganadora
                 clase_predicha = max(probabilidades_suaves, key=probabilidades_suaves.get)
                 nombre_mas_cercano = nombres_clases[clase_predicha]
-                porcentaje_maximo = probabilidades_suaves[clase_predicha]
+                
+                # Si la distancia supera el umbral, forzamos a que el porcentaje caiga drásticamente
+                if distancia_minima > UMBRAL_DISTANCIA:
+                    porcentaje_maximo = max(5.0, 100.0 - (distancia_minima / 50.0))
+                else:
+                    porcentaje_maximo = probabilidades_suaves[clase_predicha]
 
                 st.subheader("Resultados del Análisis Matemático:")
                 st.write(f"🔍 **Persona más cercana detectada por PCA/KNN:** {nombre_mas_cercano} ({porcentaje_maximo:.2f}% de similitud)")
@@ -129,12 +138,17 @@ if st.button("Analizar y Comparar con PCA"):
                         break
                 
                 if clase_usuario_id is not None:
-                    prob_usuario = probabilidades_suaves[clase_usuario_id]
+                    if distancia_minima > UMBRAL_DISTANCIA:
+                        prob_usuario = max(2.0, 40.0 - (distancia_minima / 100.0))
+                    else:
+                        prob_usuario = probabilidades_suaves[clase_usuario_id]
+                        
                     st.info(f"📊 Probabilidad de coincidencia específica para **{nombre_usuario}**: **{prob_usuario:.2f}%**")
                     
-                    if prob_usuario >= 60:
+                    # Validamos tanto la coincidencia de nombre como que la distancia sea razonable
+                    if clase_predicha == clase_usuario_id and prob_usuario >= 60 and distancia_minima <= UMBRAL_DISTANCIA:
                         st.success(f"¡Identidad validada con buen margen! El sistema apunta a que eres **{nombre_usuario}** ✅")
                     else:
-                        st.warning("⚠️ La similitud geométrica es baja. Los rasgos difieren considerablemente de este perfil.")
+                        st.error("❌ **Rechazado:** La foto ingresada no coincide geométricamente con los rasgos de este perfil (similitud muy baja o rostro desconocido).")
                 else:
                     st.warning(f"⚠️ El nombre ingresado ('{nombre_usuario}') no se encuentra registrado en el dataset base (Personas válidas: {list(nombres_clases.values())}).")
