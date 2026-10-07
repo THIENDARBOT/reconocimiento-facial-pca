@@ -123,7 +123,7 @@ if st.button("Analizar y Comparar con PCA"):
                     
                     # 5. UMBRAL ABSOLUTO DE RECHAZO ESTRICTO
                     LIMITE_MAXIMO_DISTANCIA = 65.0
-                    UMBRAL_APROBACION = 70.0
+                    UMBRAL_APROBACION = 20.0
                     
                     if distancia_minima <= LIMITE_MAXIMO_DISTANCIA and porcentaje_similitud >= UMBRAL_APROBACION:
                         st.success(f"¡Identidad validada con éxito! El sistema confirma que eres **{nombre_usuario}** ✅")
