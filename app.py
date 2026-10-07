@@ -65,10 +65,10 @@ def cargar_dataset_precargado():
     knn = KNeighborsClassifier(n_neighbors=3, weights='uniform')
     knn.fit(X_transformed, y_labels)
     
-    return pca_full, knn, nombres_clases, X_images.shape[0]
+    return pca_full, knn, nombres_clases, X_images.shape[0], y_labels
 
 # Cargar el modelo con las imágenes fijas del repositorio
-pca_full, knn, nombres_clases, resultado_carga = cargar_dataset_precargado()
+pca_full, knn, nombres_clases, resultado_carga, y_labels = cargar_dataset_precargado()
 
 if isinstance(resultado_carga, str):
     st.error(f"⚠️ Error de configuración: {resultado_carga}")
